@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be My Valentine?</title>
+    <title>Do you wanna be my Valentine's?</title>
     <style>
         body {
             display: flex;
@@ -13,60 +13,84 @@
             height: 100vh;
             margin: 0;
             background-color: #ffeef2;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
+            overflow: hidden;
         }
 
         .container {
             background: white;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(214, 51, 132, 0.2);
+            max-width: 400px;
+            width: 90%;
+            z-index: 10;
         }
 
-        h1 { color: #d63384; font-size: 2rem; }
+        .gif-container img {
+            width: 100%;
+            max-width: 250px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 { color: #d63384; font-size: 1.8rem; margin-bottom: 1.5rem; }
         
         .buttons {
-            margin-top: 20px;
             display: flex;
             justify-content: center;
-            gap: 20px;
+            align-items: center;
+            gap: 15px;
+            min-height: 100px;
         }
 
         button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
+            padding: 12px 25px;
+            font-size: 1.1rem;
             border: none;
-            border-radius: 10px;
+            border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.2s;
+            font-weight: bold;
+            transition: all 0.2s ease;
         }
 
         #yesBtn { background-color: #ff4d6d; color: white; }
-        #noBtn { background-color: #adb5bd; color: white; position: relative; }
+        #noBtn { background-color: #6c757d; color: white; position: relative; }
 
         .hidden { display: none; }
         
-        #celebration { font-size: 1.5rem; color: #ff4d6d; }
+        #celebration h1 { color: #ff4d6d; }
     </style>
 </head>
 <body>
 
     <div class="container" id="mainCard">
-        <h1 id="question">Will you be my Valentine? ❤️</h1>
+        <div class="gif-container">
+            <img id="displayGif" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHIycXN3bm8wamZueXF4Ym1qZnR5am9ueXF4Ym1qZnR5am9ueXF4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/c76IJLufpNUMo/giphy.gif" alt="Cute Valentine">
+        </div>
+        
+        <h1 id="question">Do you wanna be my Valentine's? ❤️</h1>
+        
         <div class="buttons">
-            <button id="yesBtn" onclick="celebrate()">Yes!</button>
-            <button id="noBtn" onmouseover="moveButton()">No</button>
+            <button id="yesBtn" onclick="celebrate()">DA! 🥰</button>
+            <button id="noBtn" onmouseover="moveButton()" onclick="moveButton()">NU</button>
         </div>
     </div>
 
     <div id="celebration" class="hidden">
-        <h1>Yay! See you on the 14th! 🥰</h1>
-        <p>I knew you couldn't say no.</p>
+        <div class="gif-container">
+            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHIycXN3bm8wamZueXF4Ym1qZnR5am9ueXF4Ym1qZnR5am9ueXF4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/KztT2c4u8mYYUiMKdZ/giphy.gif" alt="Happy Dance">
+        </div>
+        <h1>Știam eu! Te iubesc! ❤️</h1>
+        <p>Ne vedem pe 14 Februarie!</p>
     </div>
 
     <script>
+        let yesSize = 1.1;
+
         function moveButton() {
+            // Translate No button in puncte random
             const x = Math.random() * (window.innerWidth - 100);
             const y = Math.random() * (window.innerHeight - 50);
             
@@ -74,6 +98,10 @@
             btn.style.position = 'absolute';
             btn.style.left = x + 'px';
             btn.style.top = y + 'px';
+
+            // Yes button mai mare
+            yesSize += 0.2;
+            document.getElementById('yesBtn').style.transform = `scale(${yesSize})`;
         }
 
         function celebrate() {
