@@ -2,112 +2,168 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Do you wanna be my Valentine's?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Valentine's day mission for my pookie</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #ffeef2;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            overflow: hidden;
-        }
-
-        .container {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(214, 51, 132, 0.2);
-            max-width: 400px;
-            width: 90%;
-            z-index: 10;
-        }
-
-        .gif-container img {
-            width: 100%;
-            max-width: 250px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-
-        h1 { color: #d63384; font-size: 1.8rem; margin-bottom: 1.5rem; }
+        body { margin: 0; background: #ffeef2; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
+        #ui-layer { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 80%; }
         
-        .buttons {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            min-height: 100px;
-        }
-
-        button {
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-
-        #yesBtn { background-color: #ff4d6d; color: white; }
-        #noBtn { background-color: #6c757d; color: white; position: relative; }
-
-        .hidden { display: none; }
+        canvas { display: none; background: #87CEEB; width: 100vw; height: 100vh; }
         
-        #celebration h1 { color: #ff4d6d; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin: 10px; }
+        #yesBtn { background: #ff4d6d; color: white; transition: 0.2s; }
+        #noBtn { background: #6c757d; color: white; position: relative; }
+        
+        #mobile-controls { 
+            position: absolute; bottom: 0; width: 100%; height: 40%; 
+            display: none; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.1); color: white; font-weight: bold;
+            border-top: 2px dashed rgba(255,255,255,0.5);
+        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="container" id="mainCard">
-        <div class="gif-container">
-            <img id="displayGif" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHIycXN3bm8wamZueXF4Ym1qZnR5am9ueXF4Ym1qZnR5am9ueXF4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/c76IJLufpNUMo/giphy.gif" alt="Cute Valentine">
+    <div id="ui-layer">
+        <div id="askCard" class="card">
+            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHIycXN3bm8wamZueXF4Ym1qZnR5am9ueXF4Ym1qZnR5am9ueXF4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/c76IJLufpNUMo/giphy.gif" width="150"><br>
+            <h1>Do you wanna be my valentine's? ❤️</h1>
+            <button id="yesBtn" class="btn" onclick="startMiniGame()">DA!</button>
+            <button id="noBtn" class="btn" onmouseover="moveNo()">NU</button>
         </div>
-        
-        <h1 id="question">Do you wanna be my Valentine's? ❤️</h1>
-        
-        <div class="buttons">
-            <button id="yesBtn" onclick="celebrate()">DA! 🥰</button>
-            <button id="noBtn" onmouseover="moveButton()" onclick="moveButton()">NU</button>
+
+        <div id="winCard" class="card hidden">
+            <h1>Ai câștigat inima mea! 👑</h1>
+            <p>Te iubesc enorm!</p>
+            <img src="https://media.giphy.com/media/KztT2c4u8mYYUiMKdZ/giphy.gif" width="150">
         </div>
     </div>
 
-    <div id="celebration" class="hidden">
-        <div class="gif-container">
-            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHIycXN3bm8wamZueXF4Ym1qZnR5am9ueXF4Ym1qZnR5am9ueXF4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/KztT2c4u8mYYUiMKdZ/giphy.gif" alt="Happy Dance">
-        </div>
-        <h1>Știam eu! Te iubesc! ❤️</h1>
-        <p>Ne vedem pe 14 Februarie!</p>
-    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="mobile-controls" id="jumpArea">APASA AICI PENTRU A SARI BRO ⬆️</div>
 
     <script>
-        let yesSize = 1.1;
+        // --- CONFIGURARE IMAGINI ---
+        const PLAYER_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/190/190664.png"; // Pune fața ta aici
+        const QUEEN_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/3002/3002651.png"; // Pune fața ei aici
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let gameActive = false;
 
-        function moveButton() {
-            // Translate No button in puncte random
-            const x = Math.random() * (window.innerWidth - 100);
-            const y = Math.random() * (window.innerHeight - 50);
-            
+        // Logica pentru butonul care fuge
+        function moveNo() {
             const btn = document.getElementById('noBtn');
             btn.style.position = 'absolute';
-            btn.style.left = x + 'px';
-            btn.style.top = y + 'px';
-
-            // Yes button mai mare
-            yesSize += 0.2;
-            document.getElementById('yesBtn').style.transform = `scale(${yesSize})`;
+            btn.style.left = Math.random() * 70 + '%';
+            btn.style.top = Math.random() * 70 + '%';
+            document.getElementById('yesBtn').style.transform = `scale(${parseFloat(document.getElementById('yesBtn').style.transform || 1) + 0.1})`;
         }
 
-        function celebrate() {
-            document.getElementById('mainCard').classList.add('hidden');
-            document.getElementById('celebration').classList.remove('hidden');
+        // --- MOTORUL JOCULUI ---
+        const playerImg = new Image(); playerImg.src = PLAYER_IMAGE_URL;
+        const queenImg = new Image(); queenImg.src = QUEEN_IMAGE_URL;
+
+        let player = { x: 50, y: 0, w: 50, h: 50, dy: 0, jumpPower: -12, gravity: 0.6, grounded: false };
+        let obstacles = [];
+        let queen = { x: 2000, y: 0, w: 60, h: 60 }; // Distanța până la ea
+        let cameraX = 0;
+
+        function startMiniGame() {
+            document.getElementById('askCard').classList.add('hidden');
+            canvas.style.display = 'block';
+            document.getElementById('mobile-controls').style.display = 'flex';
+            resize();
+            gameActive = true;
+            spawnObstacles();
+            requestAnimationFrame(update);
         }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.y = canvas.height - 150;
+            queen.y = canvas.height - 150;
+        }
+
+        function spawnObstacles() {
+            for(let i = 1; i < 5; i++) {
+                obstacles.push({ x: 400 * i + Math.random() * 200, y: canvas.height - 130, w: 40, h: 40 });
+            }
+        }
+
+        function update() {
+            if(!gameActive) return;
+
+            // Gravitație
+            player.dy += player.gravity;
+            player.y += player.dy;
+            player.x += 3; // Mers automat la dreapta
+
+            // Podea
+            if (player.y > canvas.height - 150) {
+                player.y = canvas.height - 150;
+                player.dy = 0;
+                player.grounded = true;
+            }
+
+            cameraX = player.x - 100;
+
+            // Desenare
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Iarbă
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+
+            // Obstacole (Cactus/Inimi rele)
+            ctx.fillStyle = "#e74c3c";
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+                if(player.x < obs.x + obs.w && player.x + player.w > obs.x && player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+                    player.x = 50; // Restart la coliziune
+                }
+            });
+
+            // Jucătorul (Tu)
+            ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+
+            // Regina (Ea)
+            ctx.drawImage(queenImg, queen.x, queen.y, queen.w, queen.h);
+            
+            if(player.x > queen.x - 20) {
+                winGame();
+            }
+
+            ctx.restore();
+            requestAnimationFrame(update);
+        }
+
+        function winGame() {
+            gameActive = false;
+            canvas.style.display = 'none';
+            document.getElementById('mobile-controls').style.display = 'none';
+            document.getElementById('winCard').classList.remove('hidden');
+        }
+
+        // Control Mobile & Click
+        window.addEventListener('touchstart', () => {
+            if(player.grounded) {
+                player.dy = player.jumpPower;
+                player.grounded = false;
+            }
+        });
+        window.addEventListener('mousedown', () => {
+            if(player.grounded) {
+                player.dy = player.jumpPower;
+                player.grounded = false;
+            }
+        });
     </script>
 </body>
 </html>
