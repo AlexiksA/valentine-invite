@@ -6,112 +6,442 @@
     <title>Misiunea Valentine</title>
     <style>
         body { margin: 0; background: #ffeef2; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; }
-        #ui-layer { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 100; pointer-events: none; }
-        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; pointer-events: auto; }
         
-        canvas { display: none; background: linear-gradient(#87CEEB, #E0F6FF); width: 100vw; height: 100vh; }
+        /* Ecran Start */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; background: #ffeef2;
+        }
+
+        /* Ecran Final */
+        #win-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; align-items: center; justify-content: center;
+            z-index: 9999; background: rgba(255, 238, 242, 0.95);
+        }
+
+        .card { 
+            background: white; padding: 2rem; border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(214, 51, 132, 0.2); text-align: center; 
+            max-width: 320px; width: 90%;
+        }
+
+        canvas { display: none; background: #87CEEB; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
         
-        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin: 10px; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin: 10px; display: inline-block; }
         #yesBtn { background: #ff4d6d; color: white; }
         #noBtn { background: #6c757d; color: white; position: relative; }
 
-        /* Controale Mobile */
         #controls { 
-            position: absolute; bottom: 20px; width: 100%; display: none; 
-            justify-content: space-around; z-index: 50; padding: 0 10px; box-sizing: border-box;
+            position: fixed; bottom: 20px; width: 100%; 
+            display: none; justify-content: space-around; z-index: 5000; 
+            pointer-events: none;
         }
         .control-btn { 
-            width: 70px; height: 70px; background: rgba(255, 255, 255, 0.8); 
-            border: 2px solid #ff4d6d; border-radius: 50%; font-size: 1.5rem;
+            width: 65px; height: 65px; background: white; 
+            border: 3px solid #ff4d6d; border-radius: 50%; font-size: 1.5rem;
             display: flex; align-items: center; justify-content: center;
-            user-select: none; -webkit-user-select: none;
+            pointer-events: auto;
+            user-select: none;
         }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <div id="askCard" class="card">
+    <div id="start-screen">
+        <div class="card">
             <h1>Vrei să fii Valentina mea? ❤️</h1>
-            <button id="yesBtn" class="btn" onclick="startMiniGame()">DA!</button>
-            <button id="noBtn" class="btn" onmouseover="moveNo()">NU</button>
-        </div>
-
-        <div id="winCard" class="card hidden">
-            <h1>Ai ajuns la inima mea! 👑</h1>
-            <p>Te iubesc enorm!</p>
+            <button id="yesBtn" class="btn" onclick="launchGame()">DA!</button>
+            <button id="noBtn" class="btn" onmouseover="runAway()" ontouchstart="runAway()">NU</button>
         </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="controls">
-        <div style="display: flex; gap: 20px;">
-            <div class="control-btn" id="leftBtn">⬅️</div>
-            <div class="control-btn" id="rightBtn">➡️</div>
+        <div style="display: flex; gap: 15px;">
+            <div class="control-btn" id="lB">⬅️</div>
+            <div class="control-btn" id="rB">➡️</div>
         </div>
-        <div class="control-btn" id="jumpBtn">⬆️</div>
+        <div class="control-btn" id="jB">⬆️</div>
+    </div>
+
+    <div id="win-screen">
+        <div class="card">
+            <h1>Te-am găsit! ❤️</h1>
+            <p>Ești regina mea. Te iubesc enorm!</p>
+            <button class="btn" onclick="location.reload()" style="font-size: 0.9rem; background: #ff4d6d; color: white;">Joacă din nou</button>
+        </div>
     </div>
 
     <script>
-        const PLAYER_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/190/190664.png"; 
-        const QUEEN_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/3002/3002651.png";
-        
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let gameActive = false;
+        const pImg = new Image(); 
+        pImg.src = "gigel.png";
+        const qImg = new Image(); 
+        qImg.src = "https://cdn-icons-png.flaticon.com/512/3002/3002651.png";
 
-        function moveNo() {
-            const btn = document.getElementById('noBtn');
-            btn.style.position = 'absolute';
-            btn.style.left = Math.random() * 70 + '%';
-            btn.style.top = Math.random() * 70 + '%';
+        let gameRunning = false;
+        let p, q, plats, traps, enemies, camX, inputs, ground;
+        let jumpPressed = false;
+
+        function runAway() {
+            const b = document.getElementById('noBtn');
+            b.style.position = 'fixed';
+            b.style.left = Math.random() * 70 + 10 + '%';
+            b.style.top = Math.random() * 70 + 10 + '%';
         }
 
-        // Configurație Joc
-        const playerImg = new Image(); playerImg.src = PLAYER_IMAGE_URL;
-        const queenImg = new Image(); queenImg.src = QUEEN_IMAGE_URL;
-
-        let player = { 
-            x: 100, y: 0, w: 60, h: 60, 
-            dx: 0, dy: 0, 
-            speed: 5, gravity: 0.6, 
-            jumpForce: -8, maxJumpTime: 15, jumpCounter: 0, 
-            isJumping: false, grounded: false 
-        };
-
-        let keys = { left: false, right: false, jump: false };
-        let obstacles = [];
-        let queen = { x: 2500, y: 0, w: 70, h: 70 };
-        let cameraX = 0;
-
-        function startMiniGame() {
-            document.getElementById('askCard').classList.add('hidden');
+        function launchGame() {
+            // Ascunde UI-ul de start
+            document.getElementById('start-screen').style.display = 'none';
             canvas.style.display = 'block';
-            document.getElementById('controls').style.display = 'flex';
-            resize();
-            spawnObstacles();
-            gameActive = true;
-            requestAnimationFrame(update);
-        }
-
-        function resize() {
+            
+            // Setează dimensiunile canvas
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            player.y = canvas.height - 160;
-            queen.y = canvas.height - 170;
-        }
-
-        function spawnObstacles() {
-            for(let i = 1; i < 8; i++) {
-                obstacles.push({ x: 500 * i + Math.random() * 100, y: canvas.height - 140, w: 40, h: 40 });
+            ground = canvas.height - 100;
+            
+            // Activează controalele pe mobil
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('controls').style.display = 'flex';
             }
+
+            // Inițializează variabilele de joc
+            inputs = { left: false, right: false, up: false };
+            camX = 0;
+            jumpPressed = false;
+            
+            p = { 
+                x: 50, 
+                y: ground - 50, 
+                w: 50, 
+                h: 50, 
+                dx: 0, 
+                dy: 0, 
+                speed: 6, 
+                grav: 0.6, 
+                jump: -14, 
+                onG: true 
+            };
+            
+            q = { 
+                x: 4000, 
+                y: ground - 60, 
+                w: 60, 
+                h: 60 
+            };
+            
+            // Platforme mai variate
+            plats = [];
+            for(let i = 0; i < 20; i++) {
+                plats.push({ 
+                    x: 400 + (i * 220), 
+                    y: ground - (60 + Math.random() * 180), 
+                    w: 80 + Math.random() * 60, 
+                    h: 15 
+                });
+            }
+            
+            // Mai multe capcane
+            traps = [];
+            // Capcane pe pământ
+            for(let i = 0; i < 15; i++) {
+                traps.push({ 
+                    x: 600 + (i * 280), 
+                    y: ground - 30, 
+                    w: 30, 
+                    h: 30 
+                });
+            }
+            // Capcane pe platforme
+            plats.forEach((plt, idx) => {
+                if(idx % 3 === 0 && idx > 2) {
+                    traps.push({
+                        x: plt.x + plt.w/2 - 15,
+                        y: plt.y - 30,
+                        w: 30,
+                        h: 30
+                    });
+                }
+            });
+
+            // Dușmani simpli care merg înainte și înapoi
+            enemies = [];
+            for(let i = 0; i < 5; i++) {
+                enemies.push({
+                    x: 1000 + (i * 700),
+                    y: ground - 40,
+                    w: 40,
+                    h: 40,
+                    speed: 2,
+                    dir: 1,
+                    minX: 1000 + (i * 700) - 100,
+                    maxX: 1000 + (i * 700) + 100
+                });
+            }
+
+            gameRunning = true;
+            loop();
         }
 
-        // Control input
-        const setupBtn = (id, key) => {
-            const btn = document.getElementById(id);
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-            btn.addEventListener('mousedown', () => keys[key] =
+        // Event Listeners pentru tastatură
+        window.addEventListener('keydown', e => {
+            if(!gameRunning) return;
+            if(e.code === 'ArrowLeft' || e.code === 'KeyA') inputs.left = true;
+            if(e.code === 'ArrowRight' || e.code === 'KeyD') inputs.right = true;
+            if(e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                if(!jumpPressed) {
+                    inputs.up = true;
+                    jumpPressed = true;
+                }
+            }
+        });
+        
+        window.addEventListener('keyup', e => {
+            if(e.code === 'ArrowLeft' || e.code === 'KeyA') inputs.left = false;
+            if(e.code === 'ArrowRight' || e.code === 'KeyD') inputs.right = false;
+            if(e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                inputs.up = false;
+                jumpPressed = false;
+            }
+        });
+
+        // Event Listeners pentru controale mobile
+        function bind(id, k) {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                inputs[k] = true; 
+            });
+            el.addEventListener('touchend', (e) => { 
+                e.preventDefault(); 
+                inputs[k] = false; 
+            });
+            el.addEventListener('mousedown', (e) => { 
+                e.preventDefault(); 
+                inputs[k] = true; 
+            });
+            el.addEventListener('mouseup', (e) => { 
+                e.preventDefault(); 
+                inputs[k] = false; 
+            });
+        }
+        
+        bind('lB', 'left'); 
+        bind('rB', 'right'); 
+        bind('jB', 'up');
+
+        function checkCollision(a, b) {
+            return a.x < b.x + b.w &&
+                   a.x + a.w > b.x &&
+                   a.y < b.y + b.h &&
+                   a.y + a.h > b.y;
+        }
+
+        function resetPlayer() {
+            p.x = 50;
+            p.y = ground - 50;
+            p.dx = 0;
+            p.dy = 0;
+            camX = 0;
+        }
+
+        function loop() {
+            if(!gameRunning) return;
+
+            // Actualizează dușmanii
+            enemies.forEach(enemy => {
+                enemy.x += enemy.speed * enemy.dir;
+                
+                // Schimbă direcția la limite
+                if(enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
+                    enemy.dir *= -1;
+                }
+            });
+
+            // Calculează viteza (încetinită de capcane)
+            let s = p.speed;
+            let inTrap = false;
+            traps.forEach(t => {
+                if(checkCollision(p, t)) {
+                    s = 1.5;
+                    inTrap = true;
+                }
+            });
+
+            // Verifică coliziune cu dușmanii
+            enemies.forEach(enemy => {
+                if(checkCollision(p, enemy)) {
+                    resetPlayer();
+                }
+            });
+
+            // Mișcare orizontală
+            if(inputs.left) p.dx = -s;
+            else if(inputs.right) p.dx = s;
+            else p.dx = 0;
+
+            // Săritură - FIXED
+            if(inputs.up && p.onG) { 
+                p.dy = p.jump;
+                p.onG = false;
+            }
+
+            // Aplică mișcarea orizontală
+            p.x += p.dx;
+
+            // Gravitație
+            p.dy += p.grav;
+            
+            // Aplică mișcarea verticală
+            p.y += p.dy;
+
+            // Resetează onGround înainte de verificări
+            let wasOnGround = p.onG;
+            p.onG = false;
+
+            // Verifică coliziunea cu podeaua
+            if(p.y + p.h >= ground) { 
+                p.y = ground - p.h; 
+                p.dy = 0; 
+                p.onG = true; 
+            }
+
+            // Verifică coliziunea cu platformele
+            plats.forEach(pl => {
+                // Doar dacă cade (dy >= 0) și vine de sus
+                if(p.dy >= 0 && 
+                   p.x + p.w > pl.x && 
+                   p.x < pl.x + pl.w && 
+                   p.y + p.h >= pl.y && 
+                   p.y + p.h <= pl.y + pl.h + 10) {
+                    p.y = pl.y - p.h; 
+                    p.dy = 0; 
+                    p.onG = true;
+                }
+            });
+
+            // Limitează la stânga
+            if(p.x < 0) p.x = 0;
+
+            // Cameră urmărește jucătorul
+            camX = p.x - canvas.width / 3;
+            if(camX < 0) camX = 0;
+
+            // Randare
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenează fundalul cu nori
+            ctx.fillStyle = "#87CEEB";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Nori simpli
+            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+            for(let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(100 + i * 300 - (camX * 0.5) % 1500, 80 + i * 40, 40, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.save();
+            ctx.translate(-camX, 0);
+
+            // Desenează platformele
+            ctx.fillStyle = "#ffb3c1"; 
+            ctx.strokeStyle = "#ff8fab";
+            ctx.lineWidth = 3;
+            plats.forEach(pl => {
+                ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+                ctx.strokeRect(pl.x, pl.y, pl.w, pl.h);
+            });
+            
+            // Desenează capcanele (spini)
+            traps.forEach(t => {
+                ctx.fillStyle = "#e74c3c";
+                ctx.beginPath();
+                ctx.moveTo(t.x + t.w/2, t.y);
+                ctx.lineTo(t.x + t.w, t.y + t.h);
+                ctx.lineTo(t.x, t.y + t.h);
+                ctx.closePath();
+                ctx.fill();
+            });
+            
+            // Desenează dușmanii
+            enemies.forEach(enemy => {
+                ctx.fillStyle = "#9b59b6";
+                ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+                
+                // Ochi simpli
+                ctx.fillStyle = "white";
+                ctx.fillRect(enemy.x + 8, enemy.y + 10, 8, 8);
+                ctx.fillRect(enemy.x + 24, enemy.y + 10, 8, 8);
+                ctx.fillStyle = "black";
+                ctx.fillRect(enemy.x + 10, enemy.y + 12, 4, 4);
+                ctx.fillRect(enemy.x + 26, enemy.y + 12, 4, 4);
+            });
+
+            // Desenează pământul
+            ctx.fillStyle = "#8d5524"; 
+            ctx.fillRect(0, ground, canvas.width + camX + 1000, 100);
+            
+            // Desenează iarba
+            ctx.fillStyle = "#2ecc71"; 
+            ctx.fillRect(0, ground, canvas.width + camX + 1000, 10);
+
+            // Desenează jucătorul
+            if(pImg.complete) {
+                ctx.drawImage(pImg, p.x, p.y, p.w, p.h);
+            } else {
+                ctx.fillStyle = "#ff4d6d";
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+            }
+
+            // Desenează regina
+            if(qImg.complete) {
+                ctx.drawImage(qImg, q.x, q.y, q.w, q.h);
+            } else {
+                ctx.fillStyle = "#ffd700";
+                ctx.fillRect(q.x, q.y, q.w, q.h);
+            }
+
+            // Text indicator dacă în capcană
+            if(inTrap) {
+                ctx.fillStyle = "red";
+                ctx.font = "20px Arial";
+                ctx.fillText("ÎNCETINIT!", p.x - 20, p.y - 10);
+            }
+
+            ctx.restore();
+
+            // Status bar
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.fillRect(10, 10, 200, 40);
+            ctx.fillStyle = "white";
+            ctx.font = "16px Arial";
+            ctx.fillText(`Distanță: ${Math.floor(p.x)}m`, 20, 35);
+
+            // Verifică victoria
+            if(p.x + p.w >= q.x) {
+                gameRunning = false;
+                document.getElementById('win-screen').style.display = 'flex';
+                document.getElementById('controls').style.display = 'none';
+                canvas.style.display = 'none';
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // Redimensionare fereastră
+        window.addEventListener('resize', () => {
+            if(gameRunning) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                ground = canvas.height - 100;
+            }
+        });
+    </script>
+</body>
+</html>
