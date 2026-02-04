@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Be My Valentine?</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ffeef2;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1 { color: #d63384; font-size: 2rem; }
+        
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #yesBtn { background-color: #ff4d6d; color: white; }
+        #noBtn { background-color: #adb5bd; color: white; position: relative; }
+
+        .hidden { display: none; }
+        
+        #celebration { font-size: 1.5rem; color: #ff4d6d; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="mainCard">
+        <h1 id="question">Will you be my Valentine? ❤️</h1>
+        <div class="buttons">
+            <button id="yesBtn" onclick="celebrate()">Yes!</button>
+            <button id="noBtn" onmouseover="moveButton()">No</button>
+        </div>
+    </div>
+
+    <div id="celebration" class="hidden">
+        <h1>Yay! See you on the 14th! 🥰</h1>
+        <p>I knew you couldn't say no.</p>
+    </div>
+
+    <script>
+        function moveButton() {
+            const x = Math.random() * (window.innerWidth - 100);
+            const y = Math.random() * (window.innerHeight - 50);
+            
+            const btn = document.getElementById('noBtn');
+            btn.style.position = 'absolute';
+            btn.style.left = x + 'px';
+            btn.style.top = y + 'px';
+        }
+
+        function celebrate() {
+            document.getElementById('mainCard').classList.add('hidden');
+            document.getElementById('celebration').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
