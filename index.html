@@ -51,7 +51,7 @@
 
     <div id="start-screen">
         <div class="card">
-            <h1>Vrei să fii Valentina mea? ❤️</h1>
+            <h1>Do you wanna be my valentine? ❤️</h1>
             <button id="yesBtn" class="btn" onclick="launchGame()">DA!</button>
             <button id="noBtn" class="btn" onmouseover="runAway()" ontouchstart="runAway()">NU</button>
         </div>
@@ -69,9 +69,9 @@
 
     <div id="win-screen">
         <div class="card">
-            <h1>Te-am găsit! ❤️</h1>
-            <p>Ești regina mea. Te iubesc enorm!</p>
-            <button class="btn" onclick="location.reload()" style="font-size: 0.9rem; background: #ff4d6d; color: white;">Joacă din nou</button>
+            <h1>M ai gasit ❤️</h1>
+            <p>Esti regina mea😍😍. Te iubesc enorm!</p>
+            <button class="btn" onclick="location.reload()" style="font-size: 0.9rem; background: #ff4d6d; color: white;">Joaca din nou</button>
         </div>
     </div>
 
@@ -79,9 +79,9 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const pImg = new Image(); 
-        pImg.src = "gigel.png";
+        pImg.src = "ada.png";
         const qImg = new Image(); 
-        qImg.src = "https://cdn-icons-png.flaticon.com/512/3002/3002651.png";
+        qImg.src = "eu.png";
 
         let gameRunning = false;
         let p, q, plats, traps, enemies, camX, inputs, ground;
