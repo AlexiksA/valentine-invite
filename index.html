@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Valentine's day mission for my pookie</title>
+    <title>Misiunea Valentine</title>
     <style>
-        body { margin: 0; background: #ffeef2; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
-        #ui-layer { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
-        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 80%; }
+        body { margin: 0; background: #ffeef2; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; }
+        #ui-layer { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 100; pointer-events: none; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; pointer-events: auto; }
         
-        canvas { display: none; background: #87CEEB; width: 100vw; height: 100vh; }
+        canvas { display: none; background: linear-gradient(#87CEEB, #E0F6FF); width: 100vw; height: 100vh; }
         
         .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin: 10px; }
-        #yesBtn { background: #ff4d6d; color: white; transition: 0.2s; }
+        #yesBtn { background: #ff4d6d; color: white; }
         #noBtn { background: #6c757d; color: white; position: relative; }
-        
-        #mobile-controls { 
-            position: absolute; bottom: 0; width: 100%; height: 40%; 
-            display: none; justify-content: center; align-items: center;
-            background: rgba(255,255,255,0.1); color: white; font-weight: bold;
-            border-top: 2px dashed rgba(255,255,255,0.5);
+
+        /* Controale Mobile */
+        #controls { 
+            position: absolute; bottom: 20px; width: 100%; display: none; 
+            justify-content: space-around; z-index: 50; padding: 0 10px; box-sizing: border-box;
+        }
+        .control-btn { 
+            width: 70px; height: 70px; background: rgba(255, 255, 255, 0.8); 
+            border: 2px solid #ff4d6d; border-radius: 50%; font-size: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none; -webkit-user-select: none;
         }
         .hidden { display: none !important; }
     </style>
@@ -28,142 +33,85 @@
 
     <div id="ui-layer">
         <div id="askCard" class="card">
-            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHIycXN3bm8wamZueXF4Ym1qZnR5am9ueXF4Ym1qZnR5am9ueXF4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/c76IJLufpNUMo/giphy.gif" width="150"><br>
-            <h1>Do you wanna be my valentine's? ❤️</h1>
+            <h1>Vrei să fii Valentina mea? ❤️</h1>
             <button id="yesBtn" class="btn" onclick="startMiniGame()">DA!</button>
             <button id="noBtn" class="btn" onmouseover="moveNo()">NU</button>
         </div>
 
         <div id="winCard" class="card hidden">
-            <h1>Ai câștigat inima mea! 👑</h1>
+            <h1>Ai ajuns la inima mea! 👑</h1>
             <p>Te iubesc enorm!</p>
-            <img src="https://media.giphy.com/media/KztT2c4u8mYYUiMKdZ/giphy.gif" width="150">
         </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
-    <div id="mobile-controls" id="jumpArea">APASA AICI PENTRU A SARI BRO ⬆️</div>
+
+    <div id="controls">
+        <div style="display: flex; gap: 20px;">
+            <div class="control-btn" id="leftBtn">⬅️</div>
+            <div class="control-btn" id="rightBtn">➡️</div>
+        </div>
+        <div class="control-btn" id="jumpBtn">⬆️</div>
+    </div>
 
     <script>
-        // --- CONFIGURARE IMAGINI ---
-        const PLAYER_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/190/190664.png"; // Pune fața ta aici
-        const QUEEN_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/3002/3002651.png"; // Pune fața ei aici
+        const PLAYER_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/190/190664.png"; 
+        const QUEEN_IMAGE_URL = "https://cdn-icons-png.flaticon.com/512/3002/3002651.png";
         
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let gameActive = false;
 
-        // Logica pentru butonul care fuge
         function moveNo() {
             const btn = document.getElementById('noBtn');
             btn.style.position = 'absolute';
             btn.style.left = Math.random() * 70 + '%';
             btn.style.top = Math.random() * 70 + '%';
-            document.getElementById('yesBtn').style.transform = `scale(${parseFloat(document.getElementById('yesBtn').style.transform || 1) + 0.1})`;
         }
 
-        // --- MOTORUL JOCULUI ---
+        // Configurație Joc
         const playerImg = new Image(); playerImg.src = PLAYER_IMAGE_URL;
         const queenImg = new Image(); queenImg.src = QUEEN_IMAGE_URL;
 
-        let player = { x: 50, y: 0, w: 50, h: 50, dy: 0, jumpPower: -12, gravity: 0.6, grounded: false };
+        let player = { 
+            x: 100, y: 0, w: 60, h: 60, 
+            dx: 0, dy: 0, 
+            speed: 5, gravity: 0.6, 
+            jumpForce: -8, maxJumpTime: 15, jumpCounter: 0, 
+            isJumping: false, grounded: false 
+        };
+
+        let keys = { left: false, right: false, jump: false };
         let obstacles = [];
-        let queen = { x: 2000, y: 0, w: 60, h: 60 }; // Distanța până la ea
+        let queen = { x: 2500, y: 0, w: 70, h: 70 };
         let cameraX = 0;
 
         function startMiniGame() {
             document.getElementById('askCard').classList.add('hidden');
             canvas.style.display = 'block';
-            document.getElementById('mobile-controls').style.display = 'flex';
+            document.getElementById('controls').style.display = 'flex';
             resize();
-            gameActive = true;
             spawnObstacles();
+            gameActive = true;
             requestAnimationFrame(update);
         }
 
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            player.y = canvas.height - 150;
-            queen.y = canvas.height - 150;
+            player.y = canvas.height - 160;
+            queen.y = canvas.height - 170;
         }
 
         function spawnObstacles() {
-            for(let i = 1; i < 5; i++) {
-                obstacles.push({ x: 400 * i + Math.random() * 200, y: canvas.height - 130, w: 40, h: 40 });
+            for(let i = 1; i < 8; i++) {
+                obstacles.push({ x: 500 * i + Math.random() * 100, y: canvas.height - 140, w: 40, h: 40 });
             }
         }
 
-        function update() {
-            if(!gameActive) return;
-
-            // Gravitație
-            player.dy += player.gravity;
-            player.y += player.dy;
-            player.x += 3; // Mers automat la dreapta
-
-            // Podea
-            if (player.y > canvas.height - 150) {
-                player.y = canvas.height - 150;
-                player.dy = 0;
-                player.grounded = true;
-            }
-
-            cameraX = player.x - 100;
-
-            // Desenare
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Iarbă
-            ctx.fillStyle = "#2ecc71";
-            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-
-            ctx.save();
-            ctx.translate(-cameraX, 0);
-
-            // Obstacole (Cactus/Inimi rele)
-            ctx.fillStyle = "#e74c3c";
-            obstacles.forEach(obs => {
-                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-                if(player.x < obs.x + obs.w && player.x + player.w > obs.x && player.y < obs.y + obs.h && player.y + player.h > obs.y) {
-                    player.x = 50; // Restart la coliziune
-                }
-            });
-
-            // Jucătorul (Tu)
-            ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-
-            // Regina (Ea)
-            ctx.drawImage(queenImg, queen.x, queen.y, queen.w, queen.h);
-            
-            if(player.x > queen.x - 20) {
-                winGame();
-            }
-
-            ctx.restore();
-            requestAnimationFrame(update);
-        }
-
-        function winGame() {
-            gameActive = false;
-            canvas.style.display = 'none';
-            document.getElementById('mobile-controls').style.display = 'none';
-            document.getElementById('winCard').classList.remove('hidden');
-        }
-
-        // Control Mobile & Click
-        window.addEventListener('touchstart', () => {
-            if(player.grounded) {
-                player.dy = player.jumpPower;
-                player.grounded = false;
-            }
-        });
-        window.addEventListener('mousedown', () => {
-            if(player.grounded) {
-                player.dy = player.jumpPower;
-                player.grounded = false;
-            }
-        });
-    </script>
-</body>
-</html>
+        // Control input
+        const setupBtn = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mousedown', () => keys[key] =
